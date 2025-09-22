@@ -1,17 +1,34 @@
 # Speed-limit-map
 Detect possible edges with speed limit using entropy scores and then pull videos and run CV models to verify
 
+# Results
+
+
+![docx_image_2.png](images/1.png)
+
+![docx_image_4.png](images/3.png)
+
+![docx_image_5.png](images/4.png)
+
+![docx_image_6.png](images/5.png)
+
+![docx_image_7.png](images/6.png)
+
+![docx_image_3.png](images/2.png)
+
+
 # Speed Limit Video Event Detection Pipeline
 
 A production-ready pipeline to detect and validate **speed limit signs** from vehicle-mounted cameras using **geospatial triggers**, **asynchronous video pulls**, and **LLM-based visual validation**. This repo includes the functional architecture, data model, and operational guidance to reproduce the system end-to-end.
 
-> Sources: *Speed_Limit_Video_Event_Detection_Pipeline_implementation.docx* and *Entropy.pdf* (see diagrams and entropy explanation images below).
 
 ## Overview
 
 This system identifies candidate moments where vehicles likely passed **speed-limit signage**, pulls short clips around those moments, samples frames, and validates them using an **LLM vision model**. The pipeline is robust to connectivity variability and optimizes bandwidth by batching requests and sampling frames at a fixed stride.
 
 ## Architecture at a Glance
+
+![docx_image_1.png](images/SL.png)
 
 - **Geospatial Operator**: Finds vehicle events near speed-limit edges in a selected region, filtered by an entropy-based likelihood of sign presence.
 - **Batch Event Table**: Persists candidate `(device, timestamp)` pairs. Prevents duplicates and supports eventual consistency across runs.
@@ -22,7 +39,7 @@ This system identifies candidate moments where vehicles likely passed **speed-li
 ## End-to-End Flow
 
 1. **Geospatial Operator (Daily + recurring)**  
-   - Fetch tenant vehicles (e.g., `the_bricks`).  
+   - Fetch tenant vehicles.  
    - Select **edges** (road segments) with likely speed-limit signage using **entropy-based filtering**.  
    - Extract timestamps when vehicles entered those edges for a given date.  
    - Store events in `events_batch` to deduplicate work and support eventual consistency.
@@ -55,6 +72,8 @@ This system identifies candidate moments where vehicles likely passed **speed-li
 
 ## Entropy Heuristic (Sign-Likelihood)
 
+![pdf_image_1.png](images/e1.png)
+
 Use **Shannon entropy** over discretized speed categories (e.g., *Slow/Medium/Fast*) within a road segment or node to prioritize edges where **speed-limit transitions** are more likely to occur. Normalize entropy to `[0,1]` to compare across segments; higher entropy can indicate **more varied speeds**, suggesting potential sign changes or inconsistent driving speeds.
 
 ## Inference & Label Policy
@@ -70,75 +89,6 @@ Use **Shannon entropy** over discretized speed categories (e.g., *Slow/Medium/Fa
 - **Entropy bins & thresholds** → targeting accuracy.  
 - **Online-device filter cadence** → freshness vs. API usage.
 
-## Local Development
-
-```bash
-# Recommended Python version
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Pre-commit hooks
-pre-commit install
-```
-
-### Environment Variables
-
-Create a `.env` (or use your secret manager) with the following keys:
-
-```
-TENANT_NAME=the_bricks
-SILENT_API_BASE=...
-SILENT_API_KEY=...
-DB_URI=postgresql+psycopg2://user:pass@host:5432/dbname
-STORAGE_BUCKET=gs://your-bucket
-REGION_AOI=wkt_or_geojson_polygon
-LLM_ENDPOINT=...
-LLM_API_KEY=...
-FRAME_STRIDE=20
-CLIP_SECONDS=15
-```
-
-## Running the Pipeline
-
-- **Airflow/Kubeflow**: Import the DAG/DSL and set schedule to `*/180 * * * *`.  
-- **Manual backfill**: Provide `--date` to geospatial operator and enqueue batches.  
-- **Processing worker**: Poll `speedlimit_log` for new clips → download → sample → infer → write back results.
-
-## Observability
-
-- **DB tables** as single source of truth.  
-- **Grafana/SQL** dashboards on `device_bandwidth` and `speedlimit_log`.  
-- **Alerting** on high error rates, unusual bandwidth spikes, or prolonged “pending” states.
-
-## Images
-
-Below are all images extracted from the source documents. Place them under `repo_assets/images/` in your repo so that this README links correctly.
-
-### Diagrams & Figures (DOCX)
-
-![docx_image_1.png](images/SL.png)
-![docx_image_2.png](repo_assets/images/docx_image_2.png)
-![docx_image_3.png](repo_assets/images/docx_image_3.png)
-![docx_image_4.png](repo_assets/images/docx_image_4.png)
-![docx_image_5.png](repo_assets/images/docx_image_5.png)
-![docx_image_6.png](repo_assets/images/docx_image_6.png)
-![docx_image_7.png](repo_assets/images/docx_image_7.png)
-
-### Entropy Reference (PDF)
-
-![pdf_image_1.png](repo_assets/images/pdf_image_1.png)
-![pdf_image_2.png](repo_assets/images/pdf_image_2.png)
-![pdf_image_3.png](repo_assets/images/pdf_image_3.png)
-![pdf_image_4.png](repo_assets/images/pdf_image_4.png)
-![pdf_image_5.png](repo_assets/images/pdf_image_5.png)
-![pdf_image_6.png](repo_assets/images/pdf_image_6.png)
-![pdf_image_7.png](repo_assets/images/pdf_image_7.png)
-![pdf_image_8.png](repo_assets/images/pdf_image_8.png)
-![pdf_image_9.png](repo_assets/images/pdf_image_9.png)
-![pdf_image_10.png](repo_assets/images/pdf_image_10.png)
 
 
----
 
-© Your Organization. Licensed under the repository license.
