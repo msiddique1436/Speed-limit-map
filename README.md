@@ -82,13 +82,3 @@ Use **Shannon entropy** over discretized speed categories (e.g., *Slow/Medium/Fa
 - Majority voting is computed across sampled frames per clip.  
 - Store: `(final_label, representative_frame_path)` in `speedlimit_log`.
 
-## Tuning Knobs
-
-- **Sampling stride** (default: 20 frames) → recall vs. cost.  
-- **Clip length** (default: 15s) → detection window vs. bandwidth.  
-- **Entropy bins & thresholds** → targeting accuracy.  
-- **Online-device filter cadence** → freshness vs. API usage.
-
-
-
-
